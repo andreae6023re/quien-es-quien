@@ -1,1 +1,1 @@
-Versión de un solo archivo. Sube SOLO index.html al repositorio de GitHub Pages.
+Sube SOLO index.html a GitHub Pages. Las 32 imágenes están incluidas dentro del archivo.
