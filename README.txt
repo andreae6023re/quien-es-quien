@@ -1,1 +1,1 @@
-Sube SOLO index.html a GitHub Pages. Las 32 imágenes están incluidas dentro del archivo.
+Sube SOLO index.html a GitHub Pages. Las imágenes están incrustadas y la partida a distancia usa PeerJS.
