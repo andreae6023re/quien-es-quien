@@ -44,7 +44,7 @@ h1,h2,h3{margin-top:0}
 .turn.me{color:var(--red)}
 .board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:9px}
 .card{position:relative;border:0;padding:0;background:white;border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:0 2px 7px #00000016;aspect-ratio:3/4}
-.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card img{width:100%;height:100%;object-fit:contain;display:block;background:#171717}
 .card .name{position:absolute;left:0;right:0;bottom:0;background:#fffffff2;padding:6px 3px;font-weight:800;font-size:clamp(9px,1.3vw,14px);line-height:1.1}
 .card.eliminated{filter:grayscale(1);opacity:.27}
 .card.eliminated::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:var(--red);font-size:clamp(32px,6vw,70px);font-weight:900;background:#ffffff22}
@@ -122,7 +122,7 @@ h1,h2,h3{margin-top:0}
 <section id="onlineSetup" class="screen">
   <div class="panel">
     <h2>Partida a distancia</h2>
-    <p class="muted">Para una primera versión sencilla, la partida usa una conexión directa entre los dos navegadores.</p>
+    <p class="muted">Cada móvil tendrá su propio tablero y su propio personaje secreto. Un jugador crea la sala y el otro se une con el código.</p>
     <div class="setup-row">
       <div>
         <h3>Crear partida</h3>
@@ -135,7 +135,7 @@ h1,h2,h3{margin-top:0}
         <div class="actions"><button class="primary" onclick="joinRoom()">Unirse</button></div>
       </div>
     </div>
-    <div class="status" id="onlineStatus">Esperando...</div>
+    <div class="status" id="onlineStatus">Crea una sala en un móvil y únete con el código desde el otro.</div>
     <button class="secondary" onclick="goHome()">Volver</button>
   </div>
 </section>
@@ -238,102 +238,102 @@ const CHARACTERS = [
   {
     "id": 13,
     "name": "Hunt",
-    "image": "assets/13-hunt.jpg"
+    "image": "assets/custom-hunt.jpg"
   },
   {
     "id": 14,
     "name": "Ruhn Danaan",
-    "image": "assets/14-ruhn-danaan.jpg"
+    "image": "assets/custom-ruhn-danaan.jpg"
   },
   {
     "id": 15,
     "name": "Dorian",
-    "image": "assets/15-dorian.jpg"
+    "image": "assets/custom-dorian.jpg"
   },
   {
     "id": 16,
     "name": "Rowan",
-    "image": "assets/16-rowan.jpg"
+    "image": "assets/custom-rowan.jpg"
   },
   {
     "id": 17,
     "name": "Chaol",
-    "image": "assets/17-chaol.jpg"
+    "image": "assets/custom-chaol.jpg"
   },
   {
     "id": 18,
     "name": "Johnny",
-    "image": "assets/18-johnny.jpg"
+    "image": "assets/custom-johnny.jpg"
   },
   {
     "id": 19,
     "name": "Joey Lynch",
-    "image": "assets/19-joey-lynch.jpg"
+    "image": "assets/custom-joey-lynch.jpg"
   },
   {
     "id": 20,
     "name": "Kieran",
-    "image": "assets/20-kieran.jpg"
+    "image": "assets/custom-kieran.jpg"
   },
   {
     "id": 21,
     "name": "Casteel",
-    "image": "assets/21-casteel.jpg"
+    "image": "assets/custom-casteel.jpg"
   },
   {
     "id": 22,
     "name": "Nyktos",
-    "image": "assets/22-nyktos.jpg"
+    "image": "assets/custom-nyktos.jpg"
   },
   {
     "id": 23,
     "name": "Edward",
-    "image": "assets/23-edward.jpg"
+    "image": "assets/custom-edward.jpg"
   },
   {
     "id": 24,
     "name": "Jacob",
-    "image": "assets/24-jacob.jpg"
+    "image": "assets/custom-jacob.jpg"
   },
   {
     "id": 25,
     "name": "Peeta",
-    "image": "assets/25-peeta.jpg"
+    "image": "assets/custom-peeta.jpg"
   },
   {
     "id": 26,
     "name": "Cuatro",
-    "image": "assets/26-cuatro.jpg"
+    "image": "assets/custom-cuatro.jpg"
   },
   {
     "id": 27,
     "name": "Dain Aetos",
-    "image": "assets/27-dain-aetos.jpg"
+    "image": "assets/custom-dain-aetos.jpg"
   },
   {
     "id": 28,
     "name": "Xaden Riorson",
-    "image": "assets/28-xaden-riorson.jpg"
+    "image": "assets/custom-xaden-riorson.jpg"
   },
   {
     "id": 29,
     "name": "Tamlin",
-    "image": "assets/29-tamlin.jpg"
+    "image": "assets/custom-tamlin.jpg"
   },
   {
     "id": 30,
     "name": "Liam",
-    "image": "assets/30-liam.jpg"
+    "image": "assets/custom-liam.jpg"
   },
   {
     "id": 31,
     "name": "Jack Barlowe",
-    "image": "assets/31-jack-barlowe.jpg"
+    "image": "assets/custom-jack-barlowe.jpg"
   },
   {
     "id": 32,
     "name": "Eris Vanserra",
-    "image": "assets/32-eris-vanserra.jpg"
+    "image": "assets/custom-eris-vanserra.jpg"
   }
 ];
 let mode = null;
@@ -342,6 +342,7 @@ let localSecrets = {1:null,2:null};
 let eliminated = new Set();
 let peer = null, conn = null, roomCode = null, isHost = false;
 let onlineSecret = null;
+let myOnlineSecret = null;
 let onlineTurn = 'host';
 let guessMode = false;
 
@@ -405,14 +406,22 @@ function toggleElimination(id) {
 }
 function resetBoard() { eliminated=new Set(); renderBoard(); }
 function checkGuess(id) {
-  const secret= mode==='local' ? localSecrets[currentPlayer===1?2:1] : onlineSecret;
+  const secret = mode==='local'
+    ? localSecrets[currentPlayer===1?2:1]
+    : onlineSecret;
   const c=CHARACTERS.find(x=>x.id===id);
   if(id===secret) {
-    document.getElementById('gameStatus').innerHTML='<strong>🎉 ¡Has acertado!</strong> Era '+c.name+'.';
+    const text = mode==='local'
+      ? '¡Jugador '+currentPlayer+' ha acertado! Era '+c.name+'.'
+      : '¡Has acertado! Era '+c.name+'.';
+    document.getElementById('gameStatus').innerHTML='<strong>🎉 '+text+'</strong>';
+    if(mode==='online' && conn) conn.send({type:'win',text:'El otro jugador ha acertado: '+c.name});
   } else {
     document.getElementById('gameStatus').innerHTML='<strong>No es '+c.name+'.</strong> Sigue jugando.';
+    if(mode==='online' && conn) conn.send({type:'answer',text:'No'});
   }
 }
+
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter' && document.activeElement?.id==='questionInput') sendQuestion();
 });
@@ -439,66 +448,128 @@ function createRoom() {
   const peerId='quien-es-quien-'+roomCode;
   peer=new Peer(peerId);
   peer.on('open',()=>{
+    myOnlineSecret=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)].id;
     document.getElementById('hostRoom').innerHTML='<div class="room-code">'+roomCode+'</div><p class="center muted">Comparte este código con el otro jugador.</p>';
     document.getElementById('onlineStatus').textContent='Sala creada. Esperando al otro jugador...';
   });
   peer.on('connection',c=>{
-    conn=c; wireConnection();
+    conn=c;
+    wireConnection();
     conn.on('open',()=>{
-      const hostSecret=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)].id;
-      conn.send({type:'setup', secret:hostSecret, turn:'host'});
+      // Send only the host's secret to the guest. The guest's secret will
+      // be returned to the host after the guest connects.
+      conn.send({type:'setup', opponentSecret:myOnlineSecret, turn:'host'});
       onlineTurn='host';
-      document.getElementById('onlineStatus').textContent='¡Jugador conectado! Empezando partida...';
-      setTimeout(()=>{{ if(onlineSecret) startOnlineGame(); }},500);
+      document.getElementById('onlineStatus').textContent='¡Jugador conectado! Preparando la partida...';
     });
   });
+  peer.on('error',err=>{
+    document.getElementById('onlineStatus').textContent='No se ha podido crear la sala. Prueba de nuevo.';
+  });
 }
+
 function joinRoom() {
   const code=document.getElementById('joinCode').value.trim().toUpperCase();
   if(!code) return;
   isHost=false; roomCode=code;
+  if(typeof Peer==='undefined') {
+    document.getElementById('onlineStatus').textContent='No se ha podido cargar el servicio de conexión.';
+    return;
+  }
   peer=new Peer();
   peer.on('open',()=>{
-    conn=peer.connect('quien-es-quien-'+code);
+    conn=peer.connect('quien-es-quien-'+code, {reliable:true});
     wireConnection();
-    conn.on('open',()=>document.getElementById('onlineStatus').textContent='Conectado. Esperando inicio...');    
+    conn.on('open',()=>{
+      myOnlineSecret=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)].id;
+      document.getElementById('onlineStatus').textContent='Conectado. Esperando al otro jugador...';
+    });
   });
-  peer.on('error',()=>document.getElementById('onlineStatus').textContent='No se ha encontrado esa sala o la conexión ha caducado.');
+  peer.on('error',()=>{
+    document.getElementById('onlineStatus').textContent='No se ha encontrado esa sala o la conexión ha caducado.';
+  });
 }
+
 function wireConnection() {
   conn.on('data',data=>{
     if(data.type==='setup') {
-      onlineSecret=data.secret;
+      // Guest receives the host's secret; that is the opponent's secret.
+      onlineSecret=data.opponentSecret;
+      if(!isHost) {
+        // Send the guest's own secret back to host.
+        conn.send({type:'setupGuest', opponentSecret:myOnlineSecret});
+      }
       onlineTurn=data.turn;
+      if(isHost) {
+        // Host waits for guest secret before starting.
+        document.getElementById('onlineStatus').textContent='Jugador conectado. Esperando su personaje secreto...';
+      } else {
+        startOnlineGame();
+      }
+    }
+    if(data.type==='setupGuest' && isHost) {
+      // Guest's secret is the host's opponent.
+      onlineSecret=data.opponentSecret;
       startOnlineGame();
     }
-    if(data.type==='question') addMessage(data.text,false);
-    if(data.type==='answer') addMessage('Respuesta: '+data.text,false);
+    if(data.type==='question') {
+      addMessage(data.text,false);
+      onlineTurn=isHost?'guest':'host';
+      updateOnlineTurn();
+    }
+    if(data.type==='answer') {
+      addMessage('Respuesta: '+data.text,false);
+    }
     if(data.type==='turn') { onlineTurn=data.turn; updateOnlineTurn(); }
+    if(data.type==='syncEliminated') {
+      // Each player has their own board, so do not overwrite it.
+    }
     if(data.type==='win') document.getElementById('gameStatus').innerHTML='<strong>🎉 '+data.text+'</strong>';
   });
 }
+
+function showMyOnlineSecret() {
+  const box=document.getElementById('mySecretBox');
+  const c=CHARACTERS.find(x=>x.id===myOnlineSecret);
+  if(!c) { box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='<strong>Tu personaje secreto</strong><br><span style="font-size:22px">'+c.name+'</span><br><small>No se muestra en el tablero del otro jugador.</small>';
+}
+
 function startOnlineGame() {
-  eliminated=new Set(); renderBoard();
+  if(!myOnlineSecret || !onlineSecret) return;
+  eliminated=new Set(); guessMode=false;
+  renderBoard();
   document.getElementById('gameTitle').textContent='Partida a distancia';
   document.getElementById('onlineChat').style.display='block';
+  showMyOnlineSecret();
+  addMessage('Partida iniciada. ¡Que empiece el juego!', false);
   updateOnlineTurn();
   show('game');
 }
+
 function updateOnlineTurn() {
   const mine=(isHost && onlineTurn==='host') || (!isHost && onlineTurn==='guest');
   document.getElementById('turnLabel').textContent=mine?'Tu turno':'Turno del otro jugador';
   document.getElementById('turnLabel').className='turn '+(mine?'me':'');
-  document.getElementById('gameStatus').textContent=mine?'Haz una pregunta o descarta personajes.':'Espera a que el otro jugador haga su pregunta.';
+  document.getElementById('gameStatus').textContent=mine
+    ? 'Haz una pregunta, descarta personajes y cuando quieras pulsa “Adivinar personaje”.'
+    : 'Espera la pregunta del otro jugador y responde Sí o No.';
 }
 function sendQuestion() {
   const input=document.getElementById('questionInput'); const text=input.value.trim();
   if(!text || !conn) return;
+  const mine=(isHost && onlineTurn==='host') || (!isHost && onlineTurn==='guest');
+  if(!mine) return;
   addMessage(text,true); conn.send({type:'question',text}); input.value='';
 }
 function sendAnswer(text) {
   if(!conn) return;
-  addMessage('Respuesta: '+text,true); conn.send({type:'answer',text});
+  addMessage('Respuesta: '+text,true);
+  conn.send({type:'answer',text});
+  onlineTurn=onlineTurn==='host'?'guest':'host';
+  conn.send({type:'turn',turn:onlineTurn});
+  updateOnlineTurn();
 }
 function addMessage(text,mine) {
   const box=document.getElementById('messages'); const d=document.createElement('div');
